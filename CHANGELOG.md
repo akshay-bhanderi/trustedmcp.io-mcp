@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.2.0 (2026-11-12)
+
+**Breaking: tool calls now need a free API key.**
+
+- Set `TRUSTEDMCP_API_KEY` (npx server) or send `Authorization: Bearer <key>` (hosted server). Get a key by email at https://trustedmcp.io/developers#key.
+- Without a key the server still starts and lists its tools, but every tool call returns an error and makes no API request.
+- Keys are scoped: `servers:read` for `lookup_server` and `find_alternatives`, `config:check` for `check_config`, `registry:read` for `registry_lookup`. `registry_lookup` also uses `servers:read` when it falls back to a search.
+- A key without the needed scope gets the API's message saying which scope is missing. A rejected or revoked key gets a message with the link for a new one.
+- The server's instructions mention the key. The CLI prints a warning to stderr when it starts without one.
+- `server.json`: `TRUSTEDMCP_API_KEY` and the remote's `Authorization` header are now required.
+- README: key setup, scopes, and every install snippet updated.
+
 ## 0.1.1 (2026-11-12)
 
 - Hosted option: the same four tools at `https://trustedmcp.io/mcp` (Streamable HTTP), listed as a remote in `server.json`. No install needed.

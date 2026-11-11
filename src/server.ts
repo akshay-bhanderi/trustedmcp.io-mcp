@@ -1,6 +1,6 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
-import { ApiError, packageVersion, TrustedMcpApi, type CheckResult } from './api.js';
+import { ApiError, NO_KEY_MESSAGE, packageVersion, TrustedMcpApi, type CheckResult } from './api.js';
 import {
   CLIENTS,
   CLIENT_NAMES,
@@ -19,6 +19,7 @@ export { TrustedMcpApi } from './api.js';
 
 const INSTRUCTIONS = `TrustedMCP grades MCP servers A to D from public signals: login, upkeep, known CVEs and how the server connects.
 Use lookup_server when the user asks about one MCP server; check_config to review every server in their MCP setup (call it with no arguments to scan the usual config files); find_alternatives for better-graded servers; registry_lookup for an official MCP Registry entry and its reported security issues.
+Every tool call needs a free TrustedMCP API key, set as TRUSTEDMCP_API_KEY in this server's env (get one at https://trustedmcp.io/developers#key). Without it, tool calls return an error that says so.
 Present a grade as an assessment from public signals and a starting point for the user's own review, never as proof that a server is safe.`;
 
 type ToolResult = { content: Array<{ type: 'text'; text: string }>; isError?: boolean };
@@ -33,6 +34,10 @@ function failure(e: unknown): ToolResult {
     message += e.retryAfter ? ` Try again in ${e.retryAfter} seconds.` : '';
   }
   return { content: [{ type: 'text', text: message }], isError: true };
+}
+
+function noKey(): ToolResult {
+  return { content: [{ type: 'text', text: NO_KEY_MESSAGE }], isError: true };
 }
 
 const READ_ONLY = { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true } as const;
@@ -56,6 +61,7 @@ export function createServer(options: { api?: TrustedMcpApi } = {}): McpServer {
       annotations: { title: 'Look up an MCP server', ...READ_ONLY },
     },
     async ({ query }) => {
+      if (!api.hasKey) return noKey();
       try {
         const { data } = await api.lookup(query);
         const [top, ...others] = data.graded;
@@ -97,6 +103,7 @@ export function createServer(options: { api?: TrustedMcpApi } = {}): McpServer {
       annotations: { title: 'Check an MCP config', ...READ_ONLY },
     },
     async ({ client, path, config }) => {
+      if (!api.hasKey) return noKey();
       try {
         const entries: ConfigEntry[] = [];
         const problems: string[] = [];
@@ -197,6 +204,7 @@ export function createServer(options: { api?: TrustedMcpApi } = {}): McpServer {
       annotations: { title: 'Find graded MCP servers', ...READ_ONLY },
     },
     async ({ instead_of, category, query, min_grade, limit }) => {
+      if (!api.hasKey) return noKey();
       try {
         let categorySlug: string | undefined;
         let exclude: string | undefined;
@@ -249,6 +257,7 @@ export function createServer(options: { api?: TrustedMcpApi } = {}): McpServer {
       annotations: { title: 'Official MCP Registry entry', ...READ_ONLY },
     },
     async ({ name }) => {
+      if (!api.hasKey) return noKey();
       try {
         const wanted = name.trim();
         if (/^[a-z0-9-]+(\.[a-z0-9-]+)+\/\S+$/i.test(wanted)) {

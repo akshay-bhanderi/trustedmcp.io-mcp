@@ -192,3 +192,71 @@ describe('tools', () => {
     expect(res.text).toContain('Rate limit reached.');
   });
 });
+
+describe('API key', () => {
+  const NO_KEY = "TrustedMCP needs a free API key for tool calls. Get one at https://trustedmcp.io/developers#key, then set TRUSTEDMCP_API_KEY in this server's env.";
+  const withKey = (apiKey: string | undefined, handler: (url: string) => Response) => {
+    const calls: Array<{ url: string; headers: Record<string, string> }> = [];
+    const fetchImpl = (async (input: string | URL | Request, init?: RequestInit) => {
+      calls.push({ url: String(input), headers: init?.headers as Record<string, string> });
+      return handler(String(input));
+    }) as typeof fetch;
+    return { api: new TrustedMcpApi({ baseUrl: 'https://api.test/v1', apiKey, fetch: fetchImpl }), calls };
+  };
+  const configArgs = { config: '{"mcpServers":{"a":{"command":"npx","args":["-y","@acme/thing"]}}}' };
+  const toolCalls: Array<[string, Record<string, unknown>]> = [
+    ['lookup_server', { query: 'x' }],
+    ['check_config', configArgs],
+    ['find_alternatives', { category: 'databases' }],
+    ['registry_lookup', { name: 'io.github.acme/thing' }],
+  ];
+
+  it.each(['', '   ', undefined])('without a key (%j) every tool returns isError and never calls fetch', async (k) => {
+    const prev = process.env.TRUSTEDMCP_API_KEY;
+    delete process.env.TRUSTEDMCP_API_KEY;
+    try {
+      const { api, calls } = withKey(k, () => new Response('{}'));
+      const c = await connect(api);
+      expect((await c.listTools()).tools).toHaveLength(4);
+      for (const [name, args] of toolCalls) {
+        const r = await call(c, name, args);
+        expect(r.isError).toBe(true);
+        expect(r.text).toBe(NO_KEY);
+      }
+      expect(calls).toHaveLength(0);
+    } finally {
+      if (prev !== undefined) process.env.TRUSTEDMCP_API_KEY = prev;
+    }
+  });
+
+  it('mentions the key in the server instructions', async () => {
+    const c = await connect(fakeApi({}).api);
+    expect(c.getInstructions()).toContain('TRUSTEDMCP_API_KEY');
+  });
+
+  it('sends the key as a Bearer token', async () => {
+    const body = { data: { query: 'x', identifiers: [], graded: [], registry: [] }, meta };
+    const { api, calls } = withKey('tmcp_abc', () => new Response(JSON.stringify(body), { status: 200 }));
+    const r = await call(await connect(api), 'lookup_server', { query: 'x' });
+    expect(r.isError).toBe(false);
+    expect(calls[0]!.headers.Authorization).toBe('Bearer tmcp_abc');
+  });
+
+  it('shows the message from a 403 insufficient_scope', async () => {
+    const message = "This key doesn't have the config:check scope. Get a key with it at https://trustedmcp.io/developers#key.";
+    const body = { error: 'insufficient_scope', required_scope: 'config:check', message };
+    const { api } = withKey('tmcp_abc', () => new Response(JSON.stringify(body), { status: 403 }));
+    const r = await call(await connect(api), 'check_config', configArgs);
+    expect(r.isError).toBe(true);
+    expect(r.text).toBe(message);
+  });
+
+  it('tells the user a 401 key was rejected and where to get a new one', async () => {
+    const body = { error: { code: 'unauthorized', message: 'Bad key.' } };
+    const { api } = withKey('tmcp_old', () => new Response(JSON.stringify(body), { status: 401 }));
+    const r = await call(await connect(api), 'lookup_server', { query: 'x' });
+    expect(r.isError).toBe(true);
+    expect(r.text).toContain('rejected');
+    expect(r.text).toContain('https://trustedmcp.io/developers#key');
+  });
+});

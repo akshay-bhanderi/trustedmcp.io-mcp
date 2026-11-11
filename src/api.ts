@@ -103,6 +103,10 @@ export class ApiError extends Error {
   }
 }
 
+export const KEY_URL = 'https://trustedmcp.io/developers#key';
+export const NO_KEY_MESSAGE = `TrustedMCP needs a free API key for tool calls. Get one at ${KEY_URL}, then set TRUSTEDMCP_API_KEY in this server's env.`;
+export const REJECTED_KEY_MESSAGE = `TrustedMCP rejected the API key in TRUSTEDMCP_API_KEY (it is invalid or has been revoked). Get a new one at ${KEY_URL}.`;
+
 export const DEFAULT_BASE_URL = 'https://trustedmcp.io/api/v1';
 
 export function packageVersion(): string {
@@ -135,6 +139,11 @@ export class TrustedMcpApi {
     this.apiKey = key && key.trim() !== '' ? key.trim() : undefined;
     this.fetchImpl = options.fetch ?? globalThis.fetch;
     this.timeoutMs = options.timeoutMs ?? 15_000;
+  }
+
+  /** True when a non-empty API key is configured. */
+  get hasKey(): boolean {
+    return this.apiKey !== undefined;
   }
 
   lookup(q: string) {
@@ -200,12 +209,15 @@ export class TrustedMcpApi {
       // not JSON; handled below
     }
     if (!res.ok) {
-      const err = (json as { error?: { code?: string; message?: string }; message?: string } | null) ?? null;
+      const err = (json as { error?: string | { code?: string; message?: string }; message?: string } | null) ?? null;
       const retry = Number(res.headers.get('retry-after') ?? '') || undefined;
+      if (res.status === 401) throw new ApiError(401, 'invalid_key', REJECTED_KEY_MESSAGE);
+      const nested = typeof err?.error === 'object' && err.error !== null ? err.error : undefined;
+      const code = typeof err?.error === 'string' ? err.error : nested?.code;
       throw new ApiError(
         res.status,
-        err?.error?.code ?? (res.status === 422 ? 'invalid_request' : `http_${res.status}`),
-        err?.error?.message ?? err?.message ?? `The TrustedMCP API answered HTTP ${res.status}.`,
+        code ?? (res.status === 422 ? 'invalid_request' : `http_${res.status}`),
+        nested?.message ?? err?.message ?? `The TrustedMCP API answered HTTP ${res.status}.`,
         retry,
       );
     }

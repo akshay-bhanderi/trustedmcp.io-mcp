@@ -15,31 +15,58 @@ Each grade is an assessment from public signals: login, upkeep, known CVEs and h
 
 All four tools only read data.
 
+## Get a key
+
+Tool calls need a free API key. Sign up with your email at [trustedmcp.io/developers](https://trustedmcp.io/developers#key). The server still starts and lists its tools without one, but every tool call returns an error that tells you to add a key.
+
+Keys are scoped. A key can have any of these three scopes:
+
+| Scope | Covers |
+| --- | --- |
+| `servers:read` | `lookup_server` and `find_alternatives` |
+| `config:check` | `check_config` |
+| `registry:read` | `registry_lookup` |
+
+`registry_lookup` also falls back to a server search when you give it a package name or search term instead of a registry name, so give the key `servers:read` as well. If a key lacks the scope a tool needs, the tool says which scope is missing. You can revoke or rotate a key on the same page. A revoked or invalid key is rejected, and the tool tells you to get a new one.
+
 ## Install
 
 **Hosted (no install)**
 
-TrustedMCP also runs as a hosted server at `https://trustedmcp.io/mcp`. It has the same four tools. Nothing to install, no Node.js needed.
+TrustedMCP also runs as a hosted server at `https://trustedmcp.io/mcp`. It has the same four tools. Nothing to install, no Node.js needed. Send your key as a Bearer token.
 
 Claude Code:
 
 ```sh
-claude mcp add --transport http trustedmcp https://trustedmcp.io/mcp
+claude mcp add --transport http trustedmcp https://trustedmcp.io/mcp --header "Authorization: Bearer YOUR_KEY"
 ```
 
 Cursor (`~/.cursor/mcp.json`):
 
 ```json
-{ "mcpServers": { "trustedmcp": { "url": "https://trustedmcp.io/mcp" } } }
+{
+  "mcpServers": {
+    "trustedmcp": {
+      "url": "https://trustedmcp.io/mcp",
+      "headers": { "Authorization": "Bearer YOUR_KEY" }
+    }
+  }
+}
 ```
 
 VS Code (`.vscode/mcp.json`):
 
 ```json
-{ "servers": { "trustedmcp": { "type": "http", "url": "https://trustedmcp.io/mcp" } } }
+{
+  "servers": {
+    "trustedmcp": {
+      "type": "http",
+      "url": "https://trustedmcp.io/mcp",
+      "headers": { "Authorization": "Bearer YOUR_KEY" }
+    }
+  }
+}
 ```
-
-The key is optional. Without one you get 30 requests a minute. For 300, send a free key from [trustedmcp.io/developers](https://trustedmcp.io/developers) as a header: `Authorization: Bearer YOUR_KEY`.
 
 The hosted server can't read files on your machine, so `check_config` needs your config pasted in as the `config` argument. The npx version below reads your config files locally.
 
@@ -50,7 +77,7 @@ Needs Node.js 18 or later.
 **Claude Code**
 
 ```sh
-claude mcp add trustedmcp -- npx -y trustedmcp mcp
+claude mcp add trustedmcp -e TRUSTEDMCP_API_KEY=YOUR_KEY -- npx -y trustedmcp mcp
 ```
 
 **Claude Desktop, Cursor, Windsurf** (`claude_desktop_config.json`, `~/.cursor/mcp.json`, `~/.codeium/windsurf/mcp_config.json`)
@@ -60,7 +87,8 @@ claude mcp add trustedmcp -- npx -y trustedmcp mcp
   "mcpServers": {
     "trustedmcp": {
       "command": "npx",
-      "args": ["-y", "trustedmcp", "mcp"]
+      "args": ["-y", "trustedmcp", "mcp"],
+      "env": { "TRUSTEDMCP_API_KEY": "YOUR_KEY" }
     }
   }
 }
@@ -74,7 +102,8 @@ claude mcp add trustedmcp -- npx -y trustedmcp mcp
     "trustedmcp": {
       "type": "stdio",
       "command": "npx",
-      "args": ["-y", "trustedmcp", "mcp"]
+      "args": ["-y", "trustedmcp", "mcp"],
+      "env": { "TRUSTEDMCP_API_KEY": "YOUR_KEY" }
     }
   }
 }
@@ -97,22 +126,8 @@ Environment variables, headers, tokens, other arguments and file paths stay on y
 
 | Variable | Default | What it does |
 | --- | --- | --- |
-| `TRUSTEDMCP_API_KEY` | none | Optional free key from [trustedmcp.io/developers](https://trustedmcp.io/developers). Raises the limit from 30 to 300 requests a minute. |
+| `TRUSTEDMCP_API_KEY` | none | Required for tool calls. Free key from [trustedmcp.io/developers](https://trustedmcp.io/developers#key), with the scopes `servers:read`, `config:check` and `registry:read`. |
 | `TRUSTEDMCP_API_URL` | `https://trustedmcp.io/api/v1` | API base URL, for testing against another copy. |
-
-With a key:
-
-```json
-{
-  "mcpServers": {
-    "trustedmcp": {
-      "command": "npx",
-      "args": ["-y", "trustedmcp", "mcp"],
-      "env": { "TRUSTEDMCP_API_KEY": "tmcp_your_key" }
-    }
-  }
-}
-```
 
 ## The API
 
@@ -126,6 +141,8 @@ npm test        # vitest
 npm run build   # tsc to dist/
 TRUSTEDMCP_API_URL=http://127.0.0.1:8000/api/v1 node dist/cli.js mcp
 ```
+
+Tool calls need a key even when you point `TRUSTEDMCP_API_URL` at a local copy.
 
 Release (maintainers): bump `version` in `package.json` and both `version` fields in `server.json` (top level and `packages[0]`), `npm publish`, then `node scripts/publish-registry.mjs` to publish the same version to the official MCP Registry. That script needs the domain key for `io.trustedmcp/*`; it never leaves the maintainer's machine.
 

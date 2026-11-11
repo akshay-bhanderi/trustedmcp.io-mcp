@@ -1,6 +1,6 @@
 {
   "name": "trustedmcp",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "MCP server that gives your agent TrustedMCP grades: look up an MCP server, check a whole MCP config, find graded alternatives.",
   "mcpName": "io.trustedmcp/trustedmcp",
   "keywords": [

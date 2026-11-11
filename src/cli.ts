@@ -11,11 +11,12 @@ Usage:
   trustedmcp help       Show this help
 
 Add it to your MCP client:
-  claude mcp add trustedmcp -- npx -y trustedmcp mcp
-  { "mcpServers": { "trustedmcp": { "command": "npx", "args": ["-y", "trustedmcp", "mcp"] } } }
+  claude mcp add trustedmcp -e TRUSTEDMCP_API_KEY=YOUR_KEY -- npx -y trustedmcp mcp
+  { "mcpServers": { "trustedmcp": { "command": "npx", "args": ["-y", "trustedmcp", "mcp"], "env": { "TRUSTEDMCP_API_KEY": "YOUR_KEY" } } } }
 
 Environment:
-  TRUSTEDMCP_API_KEY    Optional free key from https://trustedmcp.io/developers (higher rate limit)
+  TRUSTEDMCP_API_KEY    Free key from https://trustedmcp.io/developers#key, required for tool calls
+                        (scopes: servers:read, config:check, registry:read)
   TRUSTEDMCP_API_URL    API base URL (default https://trustedmcp.io/api/v1)
 `;
 
@@ -32,6 +33,9 @@ async function main(): Promise<void> {
   }
   // No command and no terminal: an MCP client started us, so serve.
   if (command === undefined || command === 'mcp') {
+    if (!process.env.TRUSTEDMCP_API_KEY?.trim()) {
+      console.error('trustedmcp: TRUSTEDMCP_API_KEY is not set. Tool calls will fail until you set it. Free key: https://trustedmcp.io/developers#key');
+    }
     const server = createServer();
     await server.connect(new StdioServerTransport());
     // stdout is the protocol channel; anything for humans goes to stderr.
