@@ -8,12 +8,12 @@
     "source": "github"
   },
   "websiteUrl": "https://trustedmcp.io/developers",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "packages": [
     {
       "registryType": "npm",
       "identifier": "trustedmcp",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "runtimeHint": "npx",
       "packageArguments": [
         {
@@ -28,6 +28,21 @@
         {
           "name": "TRUSTEDMCP_API_KEY",
           "description": "Optional free key from trustedmcp.io/developers for a higher rate limit",
+          "isRequired": false,
+          "isSecret": true,
+          "format": "string"
+        }
+      ]
+    }
+  ],
+  "remotes": [
+    {
+      "type": "streamable-http",
+      "url": "https://trustedmcp.io/mcp",
+      "headers": [
+        {
+          "name": "Authorization",
+          "description": "Bearer <free key from trustedmcp.io/developers>, raises the limit from 30 to 300 requests a minute",
           "isRequired": false,
           "isSecret": true,
           "format": "string"

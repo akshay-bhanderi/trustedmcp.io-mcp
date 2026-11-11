@@ -17,6 +17,34 @@ All four tools only read data.
 
 ## Install
 
+**Hosted (no install)**
+
+TrustedMCP also runs as a hosted server at `https://trustedmcp.io/mcp`. It has the same four tools. Nothing to install, no Node.js needed.
+
+Claude Code:
+
+```sh
+claude mcp add --transport http trustedmcp https://trustedmcp.io/mcp
+```
+
+Cursor (`~/.cursor/mcp.json`):
+
+```json
+{ "mcpServers": { "trustedmcp": { "url": "https://trustedmcp.io/mcp" } } }
+```
+
+VS Code (`.vscode/mcp.json`):
+
+```json
+{ "servers": { "trustedmcp": { "type": "http", "url": "https://trustedmcp.io/mcp" } } }
+```
+
+The key is optional. Without one you get 30 requests a minute. For 300, send a free key from [trustedmcp.io/developers](https://trustedmcp.io/developers) as a header: `Authorization: Bearer YOUR_KEY`.
+
+The hosted server can't read files on your machine, so `check_config` needs your config pasted in as the `config` argument. The npx version below reads your config files locally.
+
+**Run locally with npx**
+
 Needs Node.js 18 or later.
 
 **Claude Code**
@@ -55,6 +83,8 @@ claude mcp add trustedmcp -- npx -y trustedmcp mcp
 Then ask: *"Check my MCP config with TrustedMCP"*, or *"What grade does @playwright/mcp get, and is there something better?"*
 
 ## What leaves your machine
+
+With the hosted endpoint, whatever you pass to a tool is sent to trustedmcp.io. The rest of this section is about the npx version.
 
 `check_config` reads your config file on your machine. It sends TrustedMCP only:
 
@@ -97,7 +127,7 @@ npm run build   # tsc to dist/
 TRUSTEDMCP_API_URL=http://127.0.0.1:8000/api/v1 node dist/cli.js mcp
 ```
 
-Release (maintainers): bump `version` in `package.json` and `server.json`, `npm publish`, then `node scripts/publish-registry.mjs` to publish the same version to the official MCP Registry. That script needs the domain key for `io.trustedmcp/*`; it never leaves the maintainer's machine.
+Release (maintainers): bump `version` in `package.json` and both `version` fields in `server.json` (top level and `packages[0]`), `npm publish`, then `node scripts/publish-registry.mjs` to publish the same version to the official MCP Registry. That script needs the domain key for `io.trustedmcp/*`; it never leaves the maintainer's machine.
 
 Use it as a library:
 
