@@ -97,6 +97,8 @@ npm run build   # tsc to dist/
 TRUSTEDMCP_API_URL=http://127.0.0.1:8000/api/v1 node dist/cli.js mcp
 ```
 
+Release (maintainers): bump `version` in `package.json` and `server.json`, `npm publish`, then `node scripts/publish-registry.mjs` to publish the same version to the official MCP Registry. That script needs the domain key for `io.trustedmcp/*`; it never leaves the maintainer's machine.
+
 Use it as a library:
 
 ```ts
