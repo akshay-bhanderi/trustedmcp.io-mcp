@@ -1,0 +1,38 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.trustedmcp/trustedmcp",
+  "title": "TrustedMCP",
+  "description": "A-D grades for MCP servers: look one up, check your MCP config, find graded alternatives.",
+  "repository": {
+    "url": "https://github.com/akshay-bhanderi/trustedmcp.io-mcp",
+    "source": "github"
+  },
+  "websiteUrl": "https://trustedmcp.io/developers",
+  "version": "0.1.0",
+  "packages": [
+    {
+      "registryType": "npm",
+      "identifier": "trustedmcp",
+      "version": "0.1.0",
+      "runtimeHint": "npx",
+      "packageArguments": [
+        {
+          "type": "positional",
+          "value": "mcp"
+        }
+      ],
+      "transport": {
+        "type": "stdio"
+      },
+      "environmentVariables": [
+        {
+          "name": "TRUSTEDMCP_API_KEY",
+          "description": "Optional free key from trustedmcp.io/developers for a higher rate limit",
+          "isRequired": false,
+          "isSecret": true,
+          "format": "string"
+        }
+      ]
+    }
+  ]
+}

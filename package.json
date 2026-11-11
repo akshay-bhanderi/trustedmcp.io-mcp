@@ -1,0 +1,54 @@
+{
+  "name": "trustedmcp",
+  "version": "0.1.0",
+  "description": "MCP server that gives your agent TrustedMCP grades: look up an MCP server, check a whole MCP config, find graded alternatives.",
+  "mcpName": "io.trustedmcp/trustedmcp",
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "mcp-server",
+    "security",
+    "trustedmcp",
+    "claude",
+    "cursor"
+  ],
+  "homepage": "https://trustedmcp.io/developers",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/akshay-bhanderi/trustedmcp.io-mcp.git"
+  },
+  "bugs": {
+    "url": "https://github.com/akshay-bhanderi/trustedmcp.io-mcp/issues"
+  },
+  "license": "MIT",
+  "author": "TrustedMCP (https://trustedmcp.io)",
+  "type": "module",
+  "bin": {
+    "trustedmcp": "dist/cli.js"
+  },
+  "main": "dist/server.js",
+  "types": "dist/server.d.ts",
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "vitest run",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "prepublishOnly": "npm run build && npm test"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.32.2",
+    "zod": "^4.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.19.43",
+    "typescript": "^5.9.3",
+    "vitest": "^3.2.7"
+  }
+}
