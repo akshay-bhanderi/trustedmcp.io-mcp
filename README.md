@@ -122,6 +122,10 @@ With the hosted endpoint, whatever you pass to a tool is sent to trustedmcp.io. 
 
 Environment variables, headers, tokens, other arguments and file paths stay on your machine. A server that runs a local file (`node ./server.js`) is not sent at all; the tool tells you it can't be looked up. The API doesn't store what it receives. The code that builds those identifiers is in [`src/identifiers.ts`](src/identifiers.ts) and [`src/config.ts`](src/config.ts).
 
+## Its own grade
+
+TrustedMCP grades this server with the same rubric as every other listing: **A**, with 3 of 4 checks at full marks. It loses points on upkeep, because it is new and has one maintainer, so pin the version you tested. See [its listing](https://trustedmcp.io/servers/trustedmcp-mcp-server) and the [setup guide](https://trustedmcp.io/guides/trustedmcp-mcp-server).
+
 ## Settings
 
 | Variable | Default | What it does |
